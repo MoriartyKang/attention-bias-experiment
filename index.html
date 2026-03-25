@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>주의 편향 실험</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #4F46E5;
+            --pos-color: #10B981;
+            --neg-color: #EF4444;
+            --bg: #F8FAFC;
+            --surface: #FFFFFF;
+            --text-main: #0F172A;
+        }
+
+        body {
+            font-family: 'Pretendard', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            background-color: var(--bg);
+            color: var(--text-main);
+        }
+
+        #experiment-container {
+            background: var(--surface);
+            padding: 50px 40px;
+            border-radius: 24px;
+            box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.08);
+            text-align: center;
+            max-width: 500px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            transition: all 0.3s ease;
+        }
+
+        #timer-bar-container {
+            width: 100%;
+            height: 6px;
+            background-color: #E2E8F0;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            overflow: hidden;
+            display: none;
+        }
+
+        #timer-bar {
+            width: 100%;
+            height: 100%;
+            background-color: var(--pos-color);
+            transition: width 0.05s linear, background-color 0.2s linear;
+        }
+
+        #grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            margin-top: 10px;
+            display: none;
+            max-width: 400px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .word-btn {
+            position: relative;
+            padding: 40px 10px;
+            font-size: 28px;
+            font-weight: 800;
+            border: 2px solid #E2E8F0;
+            border-radius: 16px;
+            background: #FFFFFF;
+            color: var(--text-main);
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        }
+
+        .word-btn:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            border-color: var(--primary);
+            background: #F8FAFC;
+        }
+
+        .word-btn:active {
+            transform: translateY(2px);
+        }
+
+        .key-hint {
+            position: absolute;
+            top: 12px;
+            left: 14px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #94A3B8;
+            background: #E2E8F0;
+            padding: 2px 8px;
+            border-radius: 6px;
+        }
+
+        #fixation {
+            font-size: 60px;
+            font-weight: 400;
+            color: #CBD5E1;
+            display: none;
+            height: 250px;
+            line-height: 250px;
+            animation: pulse 1s infinite alternate;
+        }
+
+        @keyframes pulse {
+            0% {
+                opacity: 0.5;
+                transform: scale(0.95);
+            }
+
+            100% {
+                opacity: 1;
+                transform: scale(1.05);
+            }
+        }
+
+        #instruction {
+            font-size: 26px;
+            margin-bottom: 15px;
+            font-weight: 800;
+            height: 40px;
+            color: var(--text-main);
+            letter-spacing: -0.5px;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        h2 {
+            margin-top: 0;
+            font-weight: 800;
+            letter-spacing: -1px;
+        }
+
+        input[type="text"] {
+            padding: 16px;
+            font-size: 16px;
+            width: 80%;
+            margin-bottom: 30px;
+            border: 2px solid #E2E8F0;
+            border-radius: 12px;
+            outline: none;
+            transition: border-color 0.2s;
+            font-family: inherit;
+        }
+
+        input[type="text"]:focus {
+            border-color: var(--primary);
+        }
+
+        button.start-btn {
+            padding: 16px 32px;
+            font-size: 18px;
+            font-weight: 600;
+            background-color: var(--text-main);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            width: 80%;
+            font-family: inherit;
+        }
+
+        button.start-btn:hover {
+            background-color: var(--primary);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(79, 70, 229, 0.3);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            font-size: 14px;
+        }
+
+        th,
+        td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
+        }
+
+        th {
+            background-color: #f8f9fa;
+            position: sticky;
+            top: 0;
+        }
+
+        #summary p {
+            font-size: 18px;
+            margin: 5px 0;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="experiment-container">
+        <!-- 초기 설정 화면 -->
+        <div id="setup-screen">
+            <h2>어텐션 바이어스 (Attentional Bias)</h2>
+
+            <div
+                style="text-align: left; background: var(--bg); padding: 24px; border-radius: 16px; margin-bottom: 30px; font-size: 15px; color: #475569; border: 1px solid #F1F5F9; line-height: 1.6;">
+                <p style="margin-top: 0; margin-bottom: 16px;"><strong>🧐 이 테스트는 왜 하나요?</strong><br>
+                    사람들이 긍정 또는 부정 정보 중 어디에 더 빠르게 주의를 빼앗기는지 알아보는 측정 도구입니다. 현재 나의 감정 상태에 따라 즉각적인 반응 속도가 달라집니다.</p>
+
+                <p style="margin-bottom: 0;"><strong>🕹️ 어떻게 진행하나요?</strong><br>
+                    1. 중앙 십자가(+)를 응시하면 곧 화면에 4개의 단어가 나타납니다.<br>
+                    2. 상단 지시문(긍정/부정)에 맞는 단어를 <strong>최대한 빨리 (3초 내)</strong> 찾아주세요.<br>
+                    3. 마우스 또는 <strong>키보드 단축키 (Q, W, A, S)</strong>를 눌러 선택합니다.<br>
+                    4. <strong>총 20회</strong> 진행되며, 완료 직후 나의 감정 포커스와 반응 속도를 알 수 있습니다.</p>
+            </div>
+
+            <input type="text" id="participant-id" placeholder="참여자 닉네임 (ID)">
+            <br>
+            <button class="start-btn" onclick="startExperiment()">테스트 시작하기</button>
+        </div>
+
+        <!-- 실험 진행 화면 -->
+        <div id="task-screen" class="hidden">
+            <div id="instruction"></div>
+            <div id="timer-bar-container">
+                <div id="timer-bar"></div>
+            </div>
+            <div id="fixation">+</div>
+            <div id="grid"></div>
+        </div>
+
+        <!-- 결과 화면 -->
+        <div id="result-screen" class="hidden">
+            <h2>실험 완료!</h2>
+
+            <div id="upload-status"
+                style="margin-bottom: 20px; padding: 12px; border-radius: 8px; font-weight: 600; display: none;"></div>
+
+            <div id="summary"></div>
+
+            <!-- 반응속도 차트 추가 -->
+            <canvas id="rtChart" width="400" height="200" style="margin-top: 20px; margin-bottom: 20px;"></canvas>
+
+            <button class="start-btn" onclick="downloadCSV()"
+                style="margin-bottom:15px; font-size:14px; padding: 8px 16px;">CSV 다운로드</button>
+            <div style="max-height: 200px; overflow-y: auto; border: 1px solid #eee;">
+                <table id="result-table">
+                    <thead>
+                        <tr>
+                            <th>Trial</th>
+                            <th>Condition</th>
+                            <th>Word</th>
+                            <th>Accuracy</th>
+                            <th>RT (ms)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="result-tbody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 직관적이고 긍/부정이 명확한 단어로 축소 (각 8개)
+        const posWords = [
+            "행복", "사랑", "기쁨", "성공", "환희", "웃음", "평화", "칭찬"
+        ];
+        const negWords = [
+            "슬픔", "분노", "공포", "실패", "절망", "위험", "고통", "사고"
+        ];
+        const totalTrials = 20; // 트레이닝 횟수를 20회(긍정 10, 부정 10)로 조정
+        const timeLimit = 3000; // 시간 제한 3초 (3000ms)
+
+        let participantId = "";
+        let trials = [];
+        let currentTrial = 0;
+        let results = [];
+        let timerInterval;
+        let currentTargetWords = []; // 키보드 입력을 위해 현재 단어들을 저장
+
+        // 배열 셔플 함수
+        function shuffle(array) {
+            let currentIndex = array.length, randomIndex;
+            while (currentIndex != 0) {
+                randomIndex = Math.floor(Math.random() * currentIndex);
+                currentIndex--;
+                [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
+            }
+            return array;
+        }
+
+        // 실험 시작
+        function startExperiment() {
+            const idInput = document.getElementById("participant-id").value.trim();
+            if (!idInput) {
+                alert("참가자 ID를 입력해주세요.");
+                return;
+            }
+            participantId = idInput;
+
+            // 조건 리스트 생성 (총 25회이므로 한쪽을 13번, 다른 쪽을 12번 배치)
+            let conditions = [];
+            const posCount = Math.floor(totalTrials / 2);
+            const negCount = totalTrials - posCount;
+            for (let i = 0; i < posCount; i++) conditions.push("positive");
+            for (let i = 0; i < negCount; i++) conditions.push("negative");
+            conditions = shuffle(conditions);
+
+            trials = conditions.map((cond, index) => ({
+                trialNumber: index + 1,
+                condition: cond
+            }));
+
+            document.getElementById("setup-screen").classList.add("hidden");
+            document.getElementById("task-screen").classList.remove("hidden");
+
+            nextTrial();
+        }
+
+        // 다음 Trial 진행
+        function nextTrial() {
+            if (currentTrial >= totalTrials) {
+                endExperiment();
+                return;
+            }
+
+            const condition = trials[currentTrial].condition;
+            const instElement = document.getElementById("instruction");
+
+            instElement.innerText = condition === "positive" ? "✨ 긍정 단어를 클릭하세요 ✨" : "💀 부정 단어를 클릭하세요 💀";
+            instElement.style.color = condition === "positive" ? "var(--pos-color)" : "var(--neg-color)";
+            instElement.style.visibility = "hidden"; // fixation 동안은 지시문 숨김
+
+            // Fixation cross 표시 (500ms)
+            document.getElementById("timer-bar-container").style.display = "none";
+            document.getElementById("grid").style.display = "none";
+            document.getElementById("fixation").style.display = "block";
+            document.getElementById("grid").innerHTML = "";
+
+            setTimeout(() => {
+                showGrid(condition);
+            }, 500);
+        }
+
+        // 3x3 단어 그리드 표시 및 타이머 시작
+        function showGrid(condition) {
+            document.getElementById("fixation").style.display = "none";
+            document.getElementById("instruction").style.visibility = "visible"; // 지시문 표시
+
+            const timerContainer = document.getElementById("timer-bar-container");
+            timerContainer.style.display = "block";
+
+            // 전체 단어 중 긍정 2개, 부정 2개씩 랜덤으로 뽑아 총 4개(2x2) 구성
+            let currentPos = shuffle([...posWords]).slice(0, 2);
+            let currentNeg = shuffle([...negWords]).slice(0, 2);
+            let targetWords = [...currentPos, ...currentNeg];
+
+            // 4개의 단어를 섞음
+            targetWords = shuffle(targetWords);
+            currentTargetWords = targetWords; // 키보드 입력 처리를 위해 저장
+
+            const keys = ['Q', 'W', 'A', 'S'];
+            targetWords.forEach((word, index) => {
+                const btn = document.createElement("button");
+                btn.className = "word-btn";
+                // 키보드 가이드(Q,W,A,S) 모던 디자인
+                btn.innerHTML = `<span class="key-hint">${keys[index]}</span>${word}`;
+                btn.onclick = () => handleWordClick(word, condition);
+                grid.appendChild(btn);
+            });
+
+            grid.style.display = "grid";
+            startTime = performance.now(); // 시간 측정 시작
+
+            // 타이머 게이지 로직
+            const timerBar = document.getElementById("timer-bar");
+            timerBar.style.width = "100%";
+            timerBar.style.backgroundColor = "#28a745"; // 초기 초록색
+
+            clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                const elapsed = performance.now() - startTime;
+                const remaining = Math.max(0, timeLimit - elapsed);
+                const percentage = (remaining / timeLimit) * 100;
+
+                timerBar.style.width = percentage + "%";
+
+                if (percentage < 30) {
+                    timerBar.style.backgroundColor = "#dc3545"; // 30% 미만 빨강
+                } else if (percentage < 60) {
+                    timerBar.style.backgroundColor = "#ffc107"; // 60% 미만 노랑
+                }
+
+                // 시간 초과 시
+                if (remaining === 0) {
+                    clearInterval(timerInterval);
+                    handleWordClick("TIMEOUT", condition);
+                }
+            }, 50);
+        }
+
+        // 단어 클릭 처리
+        function handleWordClick(word, condition) {
+            clearInterval(timerInterval); // 타이머 종료
+            document.getElementById("timer-bar-container").style.display = "none";
+
+            const endTime = performance.now();
+            const rt = word === "TIMEOUT" ? timeLimit : Math.round(endTime - startTime);
+
+            let isPositive = posWords.includes(word);
+            let accuracy = false;
+
+            if (word !== "TIMEOUT") {
+                if (condition === "positive" && isPositive) accuracy = true;
+                if (condition === "negative" && !isPositive) accuracy = true;
+            }
+
+            // 결과 저장
+            results.push({
+                participant_id: participantId,
+                trial_index: trials[currentTrial].trialNumber,
+                condition: condition,
+                response: word,
+                correct: accuracy,
+                rt_ms: rt,
+                timestamp: new Date().toISOString(),
+                device: navigator.userAgent
+            });
+            currentTrial++;
+            nextTrial();
+        }
+
+        // 키보드(Q,W,A,S) 입력 처리
+        document.addEventListener("keydown", (e) => {
+            // Task 화면이 켜져 있고 그리드가 보일 때만 동작
+            const taskScreen = document.getElementById("task-screen");
+            const grid = document.getElementById("grid");
+
+            if (!taskScreen.classList.contains("hidden") && grid.style.display === "grid") {
+                const currentCondition = trials[currentTrial].condition;
+                const key = e.key.toLowerCase();
+
+                if (key === "q") handleWordClick(currentTargetWords[0], currentCondition); // 왼쪽 위
+                if (key === "w") handleWordClick(currentTargetWords[1], currentCondition); // 오른쪽 위
+                if (key === "a") handleWordClick(currentTargetWords[2], currentCondition); // 왼쪽 아래
+                if (key === "s") handleWordClick(currentTargetWords[3], currentCondition); // 오른쪽 아래
+            }
+        });
+
+        // 실험 종료 및 결과 출력
+        function endExperiment() {
+            document.getElementById("task-screen").classList.add("hidden");
+            document.getElementById("result-screen").classList.remove("hidden");
+
+            // 1. 구글 시트로 데이터 백그라운드 전송
+            sendDataToGoogleSheet();
+
+            let posRT = 0, posCount = 0;
+            let negRT = 0, negCount = 0;
+            let totalPos = 0, totalNeg = 0;
+
+            let posData = [];
+            let negData = [];
+
+            const tbody = document.getElementById("result-tbody");
+            results.forEach(r => {
+                // 차트용 조건별 반응속도 데이터만 분리 수집 (결측값 null 제거)
+                if (r.condition === "positive") {
+                    posData.push(r.rt);
+                    totalPos++;
+                } else {
+                    negData.push(r.rt);
+                    totalNeg++;
+                }
+
+                // 정답을 맞춘 경우에만 평균 반응시간 계산에 포함
+                if (r.accuracy) {
+                    if (r.condition === "positive") { posRT += r.rt; posCount++; }
+                    if (r.condition === "negative") { negRT += r.rt; negCount++; }
+                }
+
+                const tr = document.createElement("tr");
+                tr.innerHTML = `
+                <td>${r.trialNumber}</td>
+                <td style="color: ${r.condition === 'positive' ? '#28a745' : '#dc3545'}; font-weight: bold;">
+                    ${r.condition === 'positive' ? 'Positive' : 'Negative'}
+                </td>
+                <td>${r.clickedWord}</td>
+                <td style="color: ${r.accuracy ? 'blue' : 'red'};">${r.accuracy ? 'O (정답)' : 'X (오답/시간초과)'}</td>
+                <td>${r.rt}</td>
+            `;
+                tbody.appendChild(tr);
+            });
+
+            const avgPosRT = posCount > 0 ? Math.round(posRT / posCount) : 0;
+            const avgNegRT = negCount > 0 ? Math.round(negRT / negCount) : 0;
+
+            const posAcc = totalPos > 0 ? Math.round((posCount / totalPos) * 100) : 0;
+            const negAcc = totalNeg > 0 ? Math.round((negCount / totalNeg) * 100) : 0;
+            const totalAcc = Math.round(((posCount + negCount) / totalTrials) * 100);
+
+            document.getElementById("summary").innerHTML = `
+            <p style="font-size: 14px; color: #666; margin-bottom: 15px;">※ 정답 처리된 시행만 평균 반응시간에 포함됩니다.</p>
+            <p style="font-size: 20px;"><strong>전체 정답률:</strong> <span style="color:#007bff">${totalAcc}%</span></p>
+            <hr style="border:0; border-top:1px solid #eee; margin:15px 0;">
+            <p><strong>긍정 타겟 요약:</strong> 평균 <span style="color:#28a745">${avgPosRT} ms</span> (정답률 ${posAcc}%)</p>
+            <p><strong>부정 타겟 요약:</strong> 평균 <span style="color:#dc3545">${avgNegRT} ms</span> (정답률 ${negAcc}%)</p>
+        `;
+
+            // 선 그래프 렌더링 (Chart.js)
+            const ctx = document.getElementById('rtChart').getContext('2d');
+
+            // x축 라벨 생성을 위해 더 긴 배열의 길이(일반적으로 10회)를 가져옴
+            const maxLen = Math.max(posData.length, negData.length);
+            const chartLabels = Array.from({ length: maxLen }, (_, i) => i + 1);
+
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: chartLabels,
+                    datasets: [
+                        {
+                            label: '긍정 타겟 반응시간 (ms)',
+                            data: posData,
+                            borderColor: '#10B981',
+                            backgroundColor: '#10B981',
+                            pointRadius: 4,
+                            tension: 0.1
+                        },
+                        {
+                            label: '부정 타겟 반응시간 (ms)',
+                            data: negData,
+                            borderColor: '#EF4444',
+                            backgroundColor: '#EF4444',
+                            pointRadius: 4,
+                            tension: 0.1
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: '각 조건별(긍정/부정) 누적 반응 속도 추이'
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: { display: true, text: '반응 시간 (ms)' },
+                            suggestedMax: timeLimit
+                        },
+                        x: {
+                            title: { display: true, text: '조건별 누적 회차' }
+                        }
+                    }
+                }
+            });
+        }
+
+        // 구글 시트로 데이터 전송 (Apps Script Web App 연동)
+        function sendDataToGoogleSheet() {
+            // [선생님 필독] 구글 시트 연동 후 발급받은 웹앱 URL을 아래 따옴표 안에 넣어주세요!
+            const scriptUrl = "YOUR_GOOGLE_SCRIPT_WEB_APP_URL";
+
+            const statusEl = document.getElementById("upload-status");
+            statusEl.style.display = "block";
+            statusEl.style.backgroundColor = "#FFFBEB"; // 노란색 계열 배경
+            statusEl.style.color = "#D97706";
+            statusEl.innerText = "데이터를 서버로 전송 중입니다... ⏳";
+
+            if (scriptUrl === "YOUR_GOOGLE_SCRIPT_WEB_APP_URL") {
+                statusEl.style.backgroundColor = "#FEF2F2";
+                statusEl.style.color = "#DC2626";
+                statusEl.innerHTML = "⚠️ <strong>안내:</strong> 아직 서버(구글 시트 URL)가 연결되지 않았습니다.<br>나의 결과는 하단 'CSV 다운로드' 버튼으로만 저장할 수 있습니다.";
+                return;
+            }
+
+            // 전체 데이터를 전송하기 편한 포맷으로 변환
+            const payload = JSON.stringify({
+                participantId: participantId,
+                timestamp: new Date().toISOString(),
+                data: results
+            });
+
+            // fetch API를 사용해 배경에서 전송
+            fetch(scriptUrl, {
+                method: 'POST',
+                body: payload,
+                // no-cors 설정 이유: 구글 스크립트 특성상 CORS 에러를 우회하고 단순히 데이터만 푸시하기 위함
+                mode: 'no-cors',
+                headers: {
+                    'Content-Type': 'text/plain'
+                }
+            }).then(() => {
+                // no-cors 모드에서는 response.ok 등을 읽을 수 없지만, 네트워크 요청 자체는 성공함
+                statusEl.style.backgroundColor = "#F0FDF4";
+                statusEl.style.color = "#16A34A";
+                statusEl.innerText = "✅ 데이터 저장 완료! (선생님 서버로 안전하게 전송되었습니다)";
+            }).catch((error) => {
+                console.error("데이터 전송 오류:", error);
+                statusEl.style.backgroundColor = "#FEF2F2";
+                statusEl.style.color = "#DC2626";
+                statusEl.innerHTML = "❌ 데이터 전송 실패. 인터넷 연결을 확인하거나 하단의 'CSV 다운로드'를 이용해주세요.";
+            });
+        }
+
+        // CSV 파일로 데이터 부분 (기존 유지)
+        function downloadCSV() {
+            let csv = "participant_id,trial_index,condition,response,correct,rt_ms,timestamp,device\n";
+            results.forEach(r => {
+                csv += `${r.participant_id},${r.trial_index},${r.condition},${r.response},${r.correct},${r.rt_ms},${r.timestamp},${r.device}\n`;
+            });
+
+            // 한글 깨짐 방지를 위한 BOM 추가
+            const blob = new Blob(["\uFEFF" + csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a");
+            const url = URL.createObjectURL(blob);
+            link.setAttribute("href", url);
+            link.setAttribute("download", `Data_${participantId}.csv`);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+    </script>
+
+</body>
+
+</html>
