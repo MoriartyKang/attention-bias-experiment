@@ -479,6 +479,7 @@
             let negData = [];
 
             const tbody = document.getElementById("result-tbody");
+            tbody.innerHTML = "";
             results.forEach(r => {
                 // 차트용 조건별 반응속도 데이터만 분리 수집 (결측값 null 제거)
                 if (r.condition === "positive") {
@@ -525,55 +526,62 @@
         `;
 
             // 선 그래프 렌더링 (Chart.js)
-            const ctx = document.getElementById('rtChart').getContext('2d');
+            const canvas = document.getElementById('rtChart');
 
-            // x축 라벨 생성을 위해 더 긴 배열의 길이(일반적으로 10회)를 가져옴
-            const maxLen = Math.max(posData.length, negData.length);
-            const chartLabels = Array.from({ length: maxLen }, (_, i) => i + 1);
+            if (canvas) {
+                if (window.myChart) {
+                    window.myChart.destroy();
+                }
 
-            new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: chartLabels,
-                    datasets: [
-                        {
-                            label: '긍정 타겟 반응시간 (ms)',
-                            data: posData,
-                            borderColor: '#10B981',
-                            backgroundColor: '#10B981',
-                            pointRadius: 4,
-                            tension: 0.1
-                        },
-                        {
-                            label: '부정 타겟 반응시간 (ms)',
-                            data: negData,
-                            borderColor: '#EF4444',
-                            backgroundColor: '#EF4444',
-                            pointRadius: 4,
-                            tension: 0.1
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    plugins: {
-                        title: {
-                            display: true,
-                            text: '각 조건별(긍정/부정) 누적 반응 속도 추이'
-                        }
+                const ctx = canvas.getContext('2d');
+
+                const maxLen = Math.max(posData.length, negData.length);
+                const chartLabels = Array.from({ length: maxLen }, (_, i) => i + 1);
+
+                window.myChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: chartLabels,
+                        datasets: [
+                            {
+                                label: '긍정 타겟 반응시간 (ms)',
+                                data: posData,
+                                borderColor: '#10B981',
+                                backgroundColor: '#10B981',
+                                pointRadius: 4,
+                                tension: 0.1
+                            },
+                            {
+                                label: '부정 타겟 반응시간 (ms)',
+                                data: negData,
+                                borderColor: '#EF4444',
+                                backgroundColor: '#EF4444',
+                                pointRadius: 4,
+                                tension: 0.1
+                            }
+                        ]
                     },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            title: { display: true, text: '반응 시간 (ms)' },
-                            suggestedMax: timeLimit
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: '각 조건별(긍정/부정) 누적 반응 속도 추이'
+                            }
                         },
-                        x: {
-                            title: { display: true, text: '조건별 누적 회차' }
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                title: { display: true, text: '반응 시간 (ms)' },
+                                suggestedMax: timeLimit
+                            },
+                            x: {
+                                title: { display: true, text: '조건별 누적 회차' }
+                            }
                         }
                     }
-                }
-            });
+                });
+            }
         }
 
         // 구글 시트로 데이터 전송 (Apps Script Web App 연동)
