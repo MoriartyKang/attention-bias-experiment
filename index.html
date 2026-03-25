@@ -482,32 +482,33 @@
             results.forEach(r => {
                 // 차트용 조건별 반응속도 데이터만 분리 수집 (결측값 null 제거)
                 if (r.condition === "positive") {
-                    posData.push(r.rt);
+                    posData.push(r.rt_ms);
                     totalPos++;
                 } else {
-                    negData.push(r.rt);
+                    negData.push(r.rt_ms);
                     totalNeg++;
                 }
 
                 // 정답을 맞춘 경우에만 평균 반응시간 계산에 포함
-                if (r.accuracy) {
-                    if (r.condition === "positive") { posRT += r.rt; posCount++; }
-                    if (r.condition === "negative") { negRT += r.rt; negCount++; }
+                if (r.correct) {
+                    if (r.condition === "positive") { posRT += r.rt_ms; posCount++; }
+                    if (r.condition === "negative") { negRT += r.rt_ms; negCount++; }
                 }
 
                 const tr = document.createElement("tr");
                 tr.innerHTML = `
-                <td>${r.trialNumber}</td>
-                <td style="color: ${r.condition === 'positive' ? '#28a745' : '#dc3545'}; font-weight: bold;">
-                    ${r.condition === 'positive' ? 'Positive' : 'Negative'}
-                </td>
-                <td>${r.clickedWord}</td>
-                <td style="color: ${r.accuracy ? 'blue' : 'red'};">${r.accuracy ? 'O (정답)' : 'X (오답/시간초과)'}</td>
-                <td>${r.rt}</td>
-            `;
+                    <td>${r.trial_index}</td>
+                    <td style="color: ${r.condition === 'positive' ? '#28a745' : '#dc3545'}; font-weight: bold;">
+                        ${r.condition === 'positive' ? 'Positive' : 'Negative'}
+                    </td>
+                    <td>${r.response}</td>
+                    <td style="color: ${r.correct ? 'blue' : 'red'};">
+                        ${r.correct ? 'O (정답)' : 'X (오답/시간초과)'}
+                    </td>
+                    <td>${r.rt_ms}</td>
+                `;
                 tbody.appendChild(tr);
             });
-
             const avgPosRT = posCount > 0 ? Math.round(posRT / posCount) : 0;
             const avgNegRT = negCount > 0 ? Math.round(negRT / negCount) : 0;
 
