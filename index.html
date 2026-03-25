@@ -613,7 +613,7 @@
                 // no-cors 모드에서는 response.ok 등을 읽을 수 없지만, 네트워크 요청 자체는 성공함
                 statusEl.style.backgroundColor = "#F0FDF4";
                 statusEl.style.color = "#16A34A";
-                statusEl.innerText = "✅ 데이터 저장 완료! (선생님 서버로 안전하게 전송되었습니다)";
+                statusEl.innerText = "✅ 데이터 저장 완료!";
             }).catch((error) => {
                 console.error("데이터 전송 오류:", error);
                 statusEl.style.backgroundColor = "#FEF2F2";
